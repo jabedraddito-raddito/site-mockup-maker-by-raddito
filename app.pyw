@@ -255,6 +255,25 @@ class App(tk.Tk):
         ttk.Label(lf, text="Devices", style="Card.TLabel").pack(side="left")
         ttk.Radiobutton(lf, text="Black", value="black", variable=self.finish, style="Card.TRadiobutton").pack(side="left", padx=(12, 6))
         ttk.Radiobutton(lf, text="Silver", value="silver", variable=self.finish, style="Card.TRadiobutton").pack(side="left")
+        ff = ttk.Frame(w4, style="Card.TFrame"); ff.pack(fill="x", pady=(12, 0))
+        ttk.Label(ff, text="File type", style="Card.TLabel").pack(side="left")
+        fmt0 = str(cfg.get("format", "jpg")).lower()
+        self.fmt = tk.StringVar(value=fmt0 if fmt0 in ("jpg", "png", "webp") else "jpg")
+        for txt, val in (("JPG", "jpg"), ("PNG", "png"), ("WebP", "webp")):
+            ttk.Radiobutton(ff, text=txt, value=val, variable=self.fmt, style="Card.TRadiobutton",
+                            command=self.fmt_changed).pack(side="left", padx=(12 if val == "jpg" else 6, 0))
+        qf = ttk.Frame(w4, style="Card.TFrame"); qf.pack(fill="x", pady=(8, 0))
+        ttk.Label(qf, text="Quality", style="Card.TLabel").pack(side="left")
+        try:
+            q0 = int(cfg.get("quality", 92))
+        except (TypeError, ValueError):
+            q0 = 92
+        self.quality = tk.IntVar(value=max(40, min(100, q0)))
+        self.q_spin = ttk.Spinbox(qf, from_=40, to=100, textvariable=self.quality, width=5)
+        self.q_spin.pack(side="left", padx=(30, 6))
+        self.q_note = ttk.Label(qf, text="", style="Card.TLabel")
+        self.q_note.pack(side="left")
+        self.fmt_changed()
 
         # pages & output
         c5, w5 = card(right, "4  Pages & save")
@@ -418,6 +437,11 @@ class App(tk.Tk):
     def out_dir(self):
         o = self.out_var.get().strip() if hasattr(self, "out_var") else self.cfg.get("out")
         return Path(o) if o else mm.desktop_dir() / "Mockups"
+
+    def fmt_changed(self):
+        png = self.fmt.get() == "png"
+        self.q_spin.configure(state="disabled" if png else "normal")
+        self.q_note.configure(text="PNG is lossless (bigger files)" if png else "92 = high quality, smaller files")
 
     def pick_out(self):
         d = filedialog.askdirectory(title="Choose the folder where mockups are saved",
@@ -600,6 +624,7 @@ class App(tk.Tk):
             URLS.write_text("\n".join(links) + "\n", encoding="utf-8")
         txt = read_settings_text()
         for k, v in (("size", size), ("scenes", ", ".join(scenes)), ("background", bg), ("device_color", self.finish.get()),
+                     ("format", self.fmt.get()), ("quality", str(max(40, min(100, int(self.quality.get()))))),
                      ("device_size", str(int(self.zoom.get()))), ("max_pages", str(int(self.max_pages.get()))), ("page_source", self.src.get()),
                      ("title_small", self.t_small.get()), ("title_big", self.t_big.get()),
                      ("output_folder", "" if out_text == str(mm.desktop_dir() / "Mockups") else out_text),

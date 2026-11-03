@@ -16,7 +16,7 @@ Paste website links (or add your own screenshots) and get finished website mocku
 - **Save folder:** box 5 sets where mockups are saved (default: Desktop\Mockups). *Browse...* picks any folder.
 1. **Box 1** – paste one website link per line (optional name first: `Lumen Dental | https://site.com`), or choose *My screenshots* and add image files.
 2. **Box 2 – styles** – click the thumbnails of the styles you want (Style 1–20). *Edit panel text…* changes the wording inside the panels.
-3. **Box 3 – size & look** – *Each style's own size* keeps the sample sizes, or type a custom size to make every style exactly that size; also device size, background and device color.
+3. **Box 3 – size & look** – *Each style's own size* keeps the sample sizes, or type a custom size to make every style exactly that size; also device size, background, device color and **File type** (JPG, PNG or WebP, with a quality setting).
 4. **Box 4 – pages & save** – *Only pages in the menu* (default) or *All pages of the website*; set *Max pages per website*.
 5. **Only take website screenshots** – saves every page (`01_Home.png`, `02_About_Us.png` …) with optional `_Tablet` and `_Mobile` versions, no mockups.
 6. Press **Make Mockups**.
