@@ -1,5 +1,7 @@
 # Site Mockup Maker by Raddito
 
+![Site Mockup Maker by Raddito - features](assets/image.png)
+
 Paste website links (or add your own screenshots) and get finished website mockups in 16 ready-made styles, saved to `Desktop\Mockups\<website name>\`.
 
 ## Install (Windows)
