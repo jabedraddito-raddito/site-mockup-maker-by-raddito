@@ -201,6 +201,7 @@ def norm_url(u: str) -> str:
     if not p.scheme:
         p = urlparse("https://" + u.strip())
     path = p.path or "/"
+    path = re.sub(r"/index\.(html?|php)$", "/", path, flags=re.I)   # /index.html is the same page as /
     if not path.endswith("/") and not re.search(r"\.[a-z0-9]{2,5}$", path, re.I):
         path += "/"
     return urlunparse((p.scheme, p.netloc.lower(), path, "", "", ""))
@@ -328,11 +329,20 @@ async def fetch_text(ctx, url):
     return ""
 
 
+def site_prefix(path):
+    """Folder the website lives in: '' for the domain root, '/en' for a language folder.
+    A pasted link to a file such as /index.html or /home.php means the site root."""
+    parts = [x for x in path.split("/") if x]
+    if parts and "." in parts[-1]:
+        parts = parts[:-1]
+    return "/" + "/".join(parts) if parts else ""
+
+
 async def sitemap_urls(ctx, root, limit=400):
     """Every page listed in the website's sitemap (WordPress/Elementor sites have one)."""
     pr = urlparse(root)
     base = f"{pr.scheme}://{pr.netloc}"
-    prefix = pr.path.rstrip("/")
+    prefix = site_prefix(pr.path)
     todo = [f"{base}{prefix}/{n}" for n in SITEMAPS] + ([f"{base}/{n}" for n in SITEMAPS] if prefix else [])
     seen, urls, done = set(), [], 0
     while todo and len(urls) < limit and done < 12:
@@ -359,6 +369,7 @@ async def discover(ctx, site, max_pages, menu_only=True):
         return [(u, slug_label(u, root)) for u in site["pages"]]
     max_pages = max_pages if max_pages and max_pages > 0 else 300
     rp = urlparse(root)
+    root_prefix = site_prefix(rp.path)
     found, labels = [root], {root: ""}
 
     def take(href, text=""):
@@ -368,7 +379,7 @@ async def discover(ctx, site, max_pages, menu_only=True):
             return False
         if p.fragment or href.endswith("#"):   # "Pages" dropdown toggles and on-page anchors
             return False
-        if not p.path.startswith(rp.path) or SKIP_EXT.search(p.path) or SKIP_PATH.search(p.path):
+        if not p.path.startswith(root_prefix) or SKIP_EXT.search(p.path) or SKIP_PATH.search(p.path):
             return False
         u = norm_url(urlunparse((rp.scheme, rp.netloc, p.path, "", "", "")))
         lab = clean_label(text)
