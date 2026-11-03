@@ -1,0 +1,12 @@
+# Put one website per line. Lines starting with # are ignored.
+#
+#   https://example.com                     -> folder name "example.com"
+#   https://demo.yoursite.com/dental-kit/   -> folder name "Dental Kit"
+#   Lumen Dental | https://example.com      -> folder name "Lumen Dental"
+#
+# The program finds the other pages from the menu by itself.
+# To capture ONLY certain pages, give them the same name:
+#   Lumen Dental | https://example.com/
+#   Lumen Dental | https://example.com/about/
+#   Lumen Dental | https://example.com/contact/
+

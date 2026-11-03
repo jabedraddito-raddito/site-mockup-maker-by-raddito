@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+_data/
+panel_text.json
+*.pyc
+# your own logos (put them in badges/ on your computer, do not upload client logos)
+badges/*.png
+badges/*.jpg
+# local copies of generated work
+Mockups/
