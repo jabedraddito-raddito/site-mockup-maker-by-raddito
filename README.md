@@ -12,6 +12,8 @@ Paste website links (or add your own screenshots) and get finished website mocku
 **If setup stops:** unzip the folder first (do not run from inside the ZIP), install Python 3.12 from python.org with "Add python.exe to PATH" ticked, delete the `.venv` folder if it exists, and run START-WINDOWS.bat again. The black window shows which step failed.
 
 ## Use
+- **Style preview:** hover or click any style in box 3 to see a sample of it; click the preview to enlarge.
+- **Save folder:** box 5 sets where mockups are saved (default: Desktop\Mockups).
 1. **Box 1** – paste one website link per line (optional name first: `Lumen Dental | https://site.com`), or choose *My screenshots* and add image files.
 2. **Box 2 – size** – *Each style's own size* keeps the sample sizes, or type a custom size to make every style exactly that size.
 3. **Box 3 – styles** – tick the styles (Style 1–16). *Edit panel text…* changes the wording inside the panels.

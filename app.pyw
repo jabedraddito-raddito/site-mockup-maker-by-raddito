@@ -10,6 +10,11 @@ from pathlib import Path
 from tkinter import ttk, messagebox, filedialog
 import json
 
+try:
+    from PIL import Image, ImageTk
+except Exception:      # preview panel simply stays hidden
+    Image = ImageTk = None
+
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import mockup_maker as mm  # noqa: E402
@@ -17,6 +22,8 @@ import mockup_maker as mm  # noqa: E402
 SETTINGS = HERE / "settings.txt"
 URLS = HERE / "urls.txt"
 STATE = HERE / "_data" / "app_state.json"
+PREVIEWS = HERE / "previews"
+PV = 226        # preview box size in pixels
 
 import styles  # noqa: E402
 
@@ -49,8 +56,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Site Mockup Maker by Raddito")
-        self.geometry("1300x860")
-        self.minsize(1100, 700)
+        self.geometry("1300x900")
+        self.minsize(1100, 780)
         self.configure(bg=BG_UI)
         self.proc = None
         self.q = queue.Queue()
@@ -169,16 +176,21 @@ class App(tk.Tk):
         ttk.Label(right, text="3.  Styles to make", style="H.TLabel").grid(row=r, column=0, sticky="w", pady=(16, 2)); r += 1
         chosen = [s.strip() for s in cfg.get("scenes", mm.DEFAULT_SCENES).split(",")]
         self.scene_vars = {}
-        grid = ttk.Frame(right); grid.grid(row=r, column=0, sticky="ew"); r += 1
+        sbox = ttk.Frame(right); sbox.grid(row=r, column=0, sticky="ew"); r += 1
+        sleft = ttk.Frame(sbox); sleft.grid(row=0, column=0, sticky="nw")
+        grid = ttk.Frame(sleft); grid.pack(anchor="w")
         half = (len(SCENES) + 1) // 2
         for i, (key, label) in enumerate(SCENES):
             v = tk.BooleanVar(value=key in chosen)
             self.scene_vars[key] = v
-            ttk.Checkbutton(grid, text=label, variable=v).grid(row=i % half, column=i // half, sticky="w", pady=1, padx=(0, 14))
-        bf = ttk.Frame(right); bf.grid(row=r, column=0, sticky="w", pady=(4, 0)); r += 1
+            cb = ttk.Checkbutton(grid, text=label, variable=v, command=lambda k=key: self.show_preview(k))
+            cb.grid(row=i % half, column=i // half, sticky="w", pady=1, padx=(0, 14))
+            cb.bind("<Enter>", lambda e, k=key: self.show_preview(k))
+        bf = ttk.Frame(sleft); bf.pack(anchor="w", pady=(4, 0))
         ttk.Button(bf, text="Select all", command=lambda: [v.set(True) for v in self.scene_vars.values()]).pack(side="left")
         ttk.Button(bf, text="Select none", command=lambda: [v.set(False) for v in self.scene_vars.values()]).pack(side="left", padx=6)
         ttk.Button(bf, text="Edit panel text...", command=self.edit_text).pack(side="left")
+        self.build_preview(sbox, chosen)
 
         ttk.Label(right, text="4.  Background & look", style="H.TLabel").grid(row=r, column=0, sticky="w", pady=(16, 2)); r += 1
         bgf = ttk.Frame(right); bgf.grid(row=r, column=0, sticky="ew"); r += 1
@@ -222,8 +234,14 @@ class App(tk.Tk):
         # ---- bottom buttons
         bot = ttk.Frame(root)
         bot.grid(row=1, column=1, sticky="sew")
+        of = ttk.Frame(bot); of.pack(fill="x", pady=(8, 0))
+        ttk.Label(of, text="5.  Save to", style="H.TLabel").pack(side="left", padx=(0, 8))
+        self.out_var = tk.StringVar(value=cfg.get("out") or str(mm.desktop_dir() / "Mockups"))
+        ttk.Entry(of, textvariable=self.out_var).pack(side="left", fill="x", expand=True)
+        ttk.Button(of, text="Browse...", command=self.pick_out).pack(side="left", padx=(6, 0))
+        ttk.Button(of, text="Desktop", command=lambda: self.out_var.set(str(mm.desktop_dir() / "Mockups"))).pack(side="left", padx=(6, 0))
         self.go = ttk.Button(bot, text="Make Mockups", style="Go.TButton", command=self.start)
-        self.go.pack(fill="x", pady=(16, 6))
+        self.go.pack(fill="x", pady=(10, 6))
         row = ttk.Frame(bot); row.pack(fill="x")
         self.stop_btn = ttk.Button(row, text="Stop", command=self.stop, state="disabled")
         self.stop_btn.pack(side="left")
@@ -341,8 +359,74 @@ class App(tk.Tk):
         return v
 
     def out_dir(self):
-        o = self.cfg.get("out")
+        o = self.out_var.get().strip() if hasattr(self, "out_var") else self.cfg.get("out")
         return Path(o) if o else mm.desktop_dir() / "Mockups"
+
+    def pick_out(self):
+        d = filedialog.askdirectory(title="Choose the folder where mockups are saved",
+                                    initialdir=str(self.out_dir().parent if self.out_dir().parent.exists() else Path.home()))
+        if d:
+            # a folder you pick is used as it is; each website gets its own sub-folder inside
+            self.out_var.set(str(Path(d)))
+
+    # ---- style preview panel -------------------------------------------------
+    def build_preview(self, parent, chosen):
+        self.pv_cache, self.pv_key = {}, None
+        if Image is None or not PREVIEWS.is_dir():
+            return
+        box = ttk.Frame(parent); box.grid(row=0, column=1, sticky="ne", padx=(8, 0))
+        parent.columnconfigure(1, weight=1)
+        ttk.Label(box, text="Preview", style="Muted.TLabel").pack(anchor="w")
+        self.pv_canvas = tk.Canvas(box, width=PV, height=PV, bg="#E3E6EF", highlightthickness=1,
+                                   highlightbackground="#C9CEDB", cursor="hand2")
+        self.pv_canvas.pack()
+        self.pv_canvas.bind("<Button-1>", lambda e: self.big_preview())
+        self.pv_caption = ttk.Label(box, text="", style="Muted.TLabel")
+        self.pv_caption.pack(anchor="w", pady=(3, 0))
+        first = next((k for k, _ in SCENES if k in chosen), SCENES[0][0])
+        self.show_preview(first)
+
+    def preview_file(self, key):
+        return PREVIEWS / f"{styles.file_name(key)}.jpg"
+
+    def show_preview(self, key):
+        if Image is None or not hasattr(self, "pv_canvas") or key == self.pv_key:
+            return
+        try:
+            if key not in self.pv_cache:
+                im = Image.open(self.preview_file(key)).convert("RGB")
+                im.thumbnail((PV, PV), Image.LANCZOS)
+                self.pv_cache[key] = ImageTk.PhotoImage(im)
+            self.pv_canvas.delete("all")
+            self.pv_canvas.create_image(PV // 2, PV // 2, image=self.pv_cache[key])
+            self.pv_key = key
+            name, size, _ = styles.STYLES[key]
+            self.pv_caption.configure(text=f"{name}  -  click to enlarge")
+        except Exception:
+            pass
+
+    def big_preview(self):
+        if not self.pv_key:
+            return
+        try:
+            im = Image.open(self.preview_file(self.pv_key)).convert("RGB")
+            lim = max(300, self.winfo_screenheight() - 140)
+            im.thumbnail((lim, lim), Image.LANCZOS)
+            win = tk.Toplevel(self)
+            win.title(f"{styles.STYLES[self.pv_key][0]} - sample preview")
+            win.configure(bg=BG_UI)
+            photo = ImageTk.PhotoImage(im)
+            lab = tk.Label(win, image=photo, bd=0)
+            lab.image = photo
+            lab.pack(padx=10, pady=(10, 4))
+            ttk.Label(win, text="Sample made with a demo website. Click the picture or press Esc to close.",
+                      style="Muted.TLabel").pack(pady=(0, 10))
+            for w in (win, lab):
+                w.bind("<Button-1>", lambda e: win.destroy())
+            win.bind("<Escape>", lambda e: win.destroy())
+            win.focus_set()
+        except Exception:
+            pass
 
     def open_out(self):
         d = self.out_dir()
@@ -372,6 +456,13 @@ class App(tk.Tk):
                 return
             n_sites = len(links)
         self.save_state()
+        out_text = self.out_var.get().strip()
+        if out_text:
+            try:
+                Path(out_text).mkdir(parents=True, exist_ok=True)
+            except OSError:
+                messagebox.showerror("Site Mockup Maker by Raddito", f"Cannot use this save folder:\n{out_text}\n\nPick another folder with Browse.")
+                return
         scenes = [k for k, v in self.scene_vars.items() if v.get()]
         if self.shots_only.get() and shots_mode:
             messagebox.showinfo("Site Mockup Maker by Raddito", "Screenshots only works with website links (box 1). Switch to 'Website links'.")
@@ -398,6 +489,7 @@ class App(tk.Tk):
         for k, v in (("size", size), ("scenes", ", ".join(scenes)), ("background", bg), ("device_color", self.finish.get()),
                      ("device_size", str(int(self.zoom.get()))), ("max_pages", str(int(self.max_pages.get()))), ("page_source", self.src.get()),
                      ("title_small", self.t_small.get()), ("title_big", self.t_big.get()),
+                     ("output_folder", "" if out_text == str(mm.desktop_dir() / "Mockups") else out_text),
                      # one size for everything: clear any per-style sizes
                      *[(f"size_{k}", "") for k, _ in SCENES]):
             txt = set_setting(txt, k, v)
