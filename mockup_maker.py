@@ -40,7 +40,8 @@ Image.MAX_IMAGE_PIXELS = None
 DEFAULT_SCENES = ",".join(["two_pages_grid", "browser_hero", "banner_page", "banner_pages_phone", "banner_three_pages",
                            "features_tilted", "what_you_can_do", "benefits", "whats_included", "perspective_dark",
                            "presentation", "page_phone", "tilted_three_pages", "laptop_phone_features",
-                           "hero_card", "hero_layered"])
+                           "hero_card", "hero_layered", "browser_phone", "three_phones", "page_cascade",
+                           "device_trio"])
 
 
 def scene_labels():

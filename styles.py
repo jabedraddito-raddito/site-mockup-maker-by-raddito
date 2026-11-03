@@ -100,6 +100,10 @@ STYLES = {
     "laptop_phone_features": ("Style 14",  (2000, 1693), True),
     "hero_card":           ("Style 15",                    (1600, 1200), False),
     "hero_layered":        ("Style 16",                 (1600, 1200), False),
+    "browser_phone":       ("Style 17",                 (2000, 2000), True),
+    "three_phones":        ("Style 18",                 (2000, 2000), True),
+    "page_cascade":        ("Style 19",                 (2000, 2000), False),
+    "device_trio":         ("Style 20",                 (2000, 2000), True),
 }
 
 
@@ -472,6 +476,63 @@ def hero_layered(x):
     x.page(x.home, box[0] + pad, box[1] + pad, box[2] - box[0] - 2 * pad, h=box[3] - box[1] - 2 * pad, r=0, shadow=0)
 
 
+# ------------------------------------------------------------------ new styles (17+)
+def _ink_on(stops):
+    """Dark text on a light backdrop, light text on a dark one."""
+    return (24, 28, 38) if mm.lum(mm.mix(*stops, .5)) > .45 else (245, 247, 250)
+
+
+def _headline(x, text, y, size=84, color=None, align="l", left=140):
+    f = x.font(size, 700)
+    col = color or _ink_on(x.stops)
+    if align == "m":
+        x.c.d.text((x.c.W / 2, x.Y(y)), text, font=f, fill=col, anchor="mm")
+    else:
+        x.c.d.text((x.X(left), x.Y(y)), text, font=f, fill=col, anchor="lm")
+
+
+def browser_phone(x):
+    c = x.c
+    x.soft_grid(80, 0.04)
+    _headline(x, x.site, 135)
+    bw = x.X(1500)
+    c.k = bw / 1000
+    c.url_text = x.host
+    c._bg = c.im.copy()
+    c.browser(x.X(110), x.Y(270), bw, x.Y(1560), x.home, 0.0)
+    x.phone(1470, 760, 420, x.page_mob(0))
+
+
+def three_phones(x):
+    x.dark_bg()
+    _headline(x, x.site, 180, 96, WHITE, "m")
+    x.c.d.text((x.c.W / 2, x.Y(275)), x.host, font=x.font(42, 450), fill=(190, 196, 206), anchor="mm")
+    x.phone(100, 650, 590, x.page_mob(1))
+    x.phone(1310, 650, 590, x.page_mob(2))
+    x.phone(690, 430, 620, x.home_mob or x.home)
+
+
+def page_cascade(x):
+    c = x.c
+    x.soft_grid(90, 0.04)
+    _headline(x, x.site, 105, 70)
+    pages = [x.home, x.page_img(0), x.page_img(1)]
+    spots = [(120, 190, 1100), (480, 540, 1100), (840, 890, 1040)]
+    for i, (img, (px, py, pw)) in enumerate(zip(pages, spots)):
+        x.page(img, x.X(px), x.Y(py), x.X(pw), top=x.start(img, i) if img is x.home and i else 0,
+               h=x.Y(1000), r=14, shadow=55)
+
+
+def device_trio(x):
+    c = x.c
+    x.soft_grid(80, 0.04)
+    c._bg = c.im.copy()
+    c.monitor(x.X(300), x.Y(170), x.S(1400), x.home, 0.0)
+    c.tablet(x.X(120), x.Y(1060), x.S(520), x.page_img(0), 0.0)
+    x.phone(1530, 1110, 300, x.page_mob(1))
+    _headline(x, x.site, 1860, 56, None, "m")
+
+
 DRAW = {
     "two_pages_grid": two_pages_grid, "browser_hero": browser_hero, "banner_page": banner_page,
     "banner_pages_phone": banner_pages_phone, "banner_three_pages": banner_three_pages,
@@ -479,6 +540,8 @@ DRAW = {
     "whats_included": whats_included, "perspective_dark": perspective_dark, "page_phone": page_phone,
     "tilted_three_pages": tilted_three_pages, "laptop_phone_features": laptop_phone_features,
     "hero_layered": hero_layered, "hero_card": hero_card,
+    "browser_phone": browser_phone, "three_phones": three_phones, "page_cascade": page_cascade,
+    "device_trio": device_trio,
     # "presentation" is drawn by mockup_maker.compose_site
 }
 

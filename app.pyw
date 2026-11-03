@@ -23,7 +23,9 @@ SETTINGS = HERE / "settings.txt"
 URLS = HERE / "urls.txt"
 STATE = HERE / "_data" / "app_state.json"
 PREVIEWS = HERE / "previews"
-PV = 226        # preview box size in pixels
+THUMB = 66      # gallery thumbnail size
+THUMB_BG = "#EDEFF5"
+PV = 250        # preview box size in pixels
 
 import styles  # noqa: E402
 
@@ -33,9 +35,12 @@ PRESETS = ["1920x1080", "1600x1200", "1200x900", "1080x1350", "1080x1080", "2000
 BGS = [("auto", "Match website (soft)"), ("brand", "Match website (strong color)"),
        ("site", "Website's page color"), ("white", "White"), ("custom", "My own color...")]
 
-BG_UI = "#F3F4F8"
-INK = "#1B2030"
-MUTED = "#5E6678"
+BG_UI = "#F4F5F9"
+CARD = "#FFFFFF"
+BORDER = "#E2E5EE"
+ACCENT_SOFT = "#EEF0FF"
+INK = "#151A2D"
+MUTED = "#667085"
 ACCENT = "#4F46E5"
 
 
@@ -56,8 +61,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Site Mockup Maker by Raddito")
-        self.geometry("1300x900")
-        self.minsize(1100, 780)
+        self.geometry("1360x900")
+        self.minsize(1240, 800)
         self.configure(bg=BG_UI)
         self.proc = None
         self.q = queue.Queue()
@@ -69,185 +74,237 @@ class App(tk.Tk):
             st.theme_use("clam")
         except tk.TclError:
             pass
-        st.configure(".", background=BG_UI, foreground=INK, font=("Segoe UI", 10))
-        st.configure("H.TLabel", font=("Segoe UI Semibold", 11), foreground=INK)
-        st.configure("Muted.TLabel", foreground=MUTED, font=("Segoe UI", 9))
-        st.configure("TCheckbutton", background=BG_UI)
-        st.configure("TRadiobutton", background=BG_UI)
-        st.configure("Go.TButton", font=("Segoe UI Semibold", 12), foreground="white", background=ACCENT, padding=(18, 10))
-        st.map("Go.TButton", background=[("active", "#4338CA"), ("disabled", "#A5A8C8")])
-        st.configure("TButton", padding=(10, 6))
+        FONT = "Segoe UI"
+        st.configure(".", background=BG_UI, foreground=INK, font=(FONT, 10))
+        st.configure("TFrame", background=BG_UI)
+        st.configure("TLabel", background=BG_UI, foreground=INK)
+        st.configure("Card.TFrame", background=CARD)
+        st.configure("Card.TLabel", background=CARD, foreground=INK)
+        st.configure("H.TLabel", font=(FONT, 12, "bold"), foreground=INK, background=CARD)
+        st.configure("Title.TLabel", font=(FONT, 17, "bold"), foreground=INK, background=BG_UI)
+        st.configure("Sub.TLabel", font=(FONT, 10), foreground=MUTED, background=BG_UI)
+        st.configure("Muted.TLabel", foreground=MUTED, font=(FONT, 9), background=CARD)
+        st.configure("Status.TLabel", foreground=MUTED, font=(FONT, 9), background=BG_UI)
+        st.configure("Card.TCheckbutton", background=CARD, foreground=INK)
+        st.configure("Card.TRadiobutton", background=CARD, foreground=INK)
+        for sty in ("Card.TCheckbutton", "Card.TRadiobutton"):
+            st.map(sty, background=[("active", CARD)])
+        st.configure("TEntry", fieldbackground="white", bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER, padding=5)
+        st.configure("TCombobox", fieldbackground="white", bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER, padding=4)
+        st.configure("TSpinbox", fieldbackground="white", bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER, padding=4)
+        st.configure("TButton", padding=(12, 7), background="#FFFFFF", bordercolor=BORDER, lightcolor="#FFFFFF", darkcolor="#FFFFFF")
+        st.map("TButton", background=[("active", ACCENT_SOFT), ("disabled", "#F1F2F6")], foreground=[("disabled", "#A0A6B5")])
+        st.configure("Small.TButton", padding=(8, 5), background="#FFFFFF", bordercolor=BORDER, lightcolor="#FFFFFF", darkcolor="#FFFFFF")
+        st.map("Small.TButton", background=[("active", ACCENT_SOFT)])
+        st.configure("Go.TButton", font=(FONT, 13, "bold"), foreground="white", background=ACCENT, padding=(20, 12),
+                     bordercolor=ACCENT, lightcolor=ACCENT, darkcolor=ACCENT)
+        st.map("Go.TButton", background=[("active", "#4338CA"), ("disabled", "#B9BBE0")], foreground=[("disabled", "white")])
+        st.configure("Seg.Toolbutton", padding=(14, 6), background="#EEF0F6", foreground=MUTED, bordercolor="#EEF0F6",
+                     font=(FONT, 10, "bold"))
+        st.map("Seg.Toolbutton", background=[("selected", ACCENT), ("active", ACCENT_SOFT)],
+               foreground=[("selected", "white")], bordercolor=[("selected", ACCENT)])
+        st.configure("Horizontal.TProgressbar", troughcolor="#E8EAF2", background=ACCENT, bordercolor="#E8EAF2",
+                     lightcolor=ACCENT, darkcolor=ACCENT, thickness=8)
+        st.configure("Horizontal.TScale", background=CARD, troughcolor="#E1E4EE")
 
-        root = ttk.Frame(self, padding=16)
+        def card(parent, title=None, sub=None, pad=16):
+            """A white panel with a thin border. Returns the inner frame to put things in."""
+            outer = tk.Frame(parent, bg=CARD, highlightbackground=BORDER, highlightthickness=1)
+            inner = ttk.Frame(outer, style="Card.TFrame", padding=pad)
+            inner.pack(fill="both", expand=True)
+            if title:
+                hd = ttk.Frame(inner, style="Card.TFrame"); hd.pack(fill="x", pady=(0, 8))
+                ttk.Label(hd, text=title, style="H.TLabel").pack(side="left")
+                if sub:
+                    ttk.Label(hd, text=sub, style="Muted.TLabel").pack(side="left", padx=(10, 0), pady=(3, 0))
+                inner.head = hd
+            return outer, inner
+        self.card = card
+
+        root = ttk.Frame(self, padding=(22, 16, 22, 16))
         root.pack(fill="both", expand=True)
-        root.columnconfigure(0, weight=3)
-        root.columnconfigure(1, weight=2)
+        root.columnconfigure(0, weight=0, minsize=420)
+        root.columnconfigure(1, weight=1)
         root.rowconfigure(1, weight=1)
 
-        # ---- left: links
-        left = ttk.Frame(root)
-        left.grid(row=0, column=0, rowspan=2, sticky="nsew", padx=(0, 16))
-        left.rowconfigure(2, weight=1)
-        left.columnconfigure(0, weight=1)
-        st0 = self.load_state()
-        head = ttk.Frame(left); head.grid(row=0, column=0, sticky="ew")
-        ttk.Label(head, text="1.  Make mockups from", style="H.TLabel").pack(side="left")
-        self.mode = tk.StringVar(value=st0.get("mode", "links"))
-        ttk.Radiobutton(head, text="Website links", value="links", variable=self.mode,
-                        command=self.switch_mode).pack(side="left", padx=(12, 4))
-        ttk.Radiobutton(head, text="My screenshots", value="shots", variable=self.mode,
-                        command=self.switch_mode).pack(side="left", padx=4)
-        self.hint = ttk.Label(left, text="", style="Muted.TLabel", wraplength=560, justify="left")
-        self.hint.grid(row=1, column=0, sticky="w", pady=(4, 6))
+        # ---- header
+        top = ttk.Frame(root); top.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 14))
+        logo = tk.Label(top, text="SM", bg=ACCENT, fg="white", font=(FONT, 12, "bold"), width=3, height=1)
+        logo.pack(side="left", ipady=4)
+        tt = ttk.Frame(top); tt.pack(side="left", padx=12)
+        ttk.Label(tt, text="Site Mockup Maker", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(tt, text="by Raddito  -  paste links, pick styles, get finished mockups", style="Sub.TLabel").pack(anchor="w")
 
-        # links box
-        self.links_box = ttk.Frame(left)
+        # ---- left column: websites + progress
+        left = ttk.Frame(root, width=420, height=10); left.grid(row=1, column=0, sticky="nsew", padx=(0, 18))
+        left.grid_propagate(False)
+        left.columnconfigure(0, weight=1)
+        c1, w1 = card(left)
+        c1.grid(row=0, column=0, sticky="ew")
+        w1.columnconfigure(0, weight=1)
+        st0 = self.load_state()
+        head = ttk.Frame(w1, style="Card.TFrame"); head.grid(row=0, column=0, sticky="ew")
+        ttk.Label(head, text="1  Websites", style="H.TLabel").pack(side="left")
+        self.mode = tk.StringVar(value=st0.get("mode", "links"))
+        seg = ttk.Frame(head, style="Card.TFrame"); seg.pack(side="right")
+        ttk.Radiobutton(seg, text="Website links", value="links", variable=self.mode, style="Seg.Toolbutton",
+                        command=self.switch_mode).pack(side="left")
+        ttk.Radiobutton(seg, text="My screenshots", value="shots", variable=self.mode, style="Seg.Toolbutton",
+                        command=self.switch_mode).pack(side="left", padx=(4, 0))
+        self.hint = ttk.Label(w1, text="", style="Muted.TLabel", wraplength=350, justify="left")
+        self.hint.grid(row=1, column=0, sticky="w", pady=(8, 6))
+
+        self.links_box = ttk.Frame(w1, style="Card.TFrame")
         self.links_box.rowconfigure(0, weight=1); self.links_box.columnconfigure(0, weight=1)
-        self.links = tk.Text(self.links_box, height=10, wrap="none", font=("Consolas", 10), relief="solid", bd=1,
-                             highlightthickness=0, padx=8, pady=6)
+        self.links = tk.Text(self.links_box, height=6, width=36, wrap="none", font=("Consolas", 10), relief="flat", bd=0,
+                             highlightthickness=1, highlightbackground=BORDER, highlightcolor=ACCENT,
+                             padx=10, pady=8, bg="#FBFBFE", fg=INK, insertbackground=INK)
         self.links.grid(row=0, column=0, sticky="nsew")
         self.links.insert("1.0", self.load_links())
 
-        # screenshots box
-        self.shots_box = ttk.Frame(left)
+        self.shots_box = ttk.Frame(w1, style="Card.TFrame")
         self.shots_box.rowconfigure(1, weight=1); self.shots_box.columnconfigure(0, weight=1)
-        bt = ttk.Frame(self.shots_box); bt.grid(row=0, column=0, sticky="ew", pady=(0, 6))
-        ttk.Button(bt, text="Add folder...", command=self.add_folder).pack(side="left")
-        ttk.Button(bt, text="Add image files...", command=self.add_files).pack(side="left", padx=6)
-        ttk.Button(bt, text="Remove selected", command=self.remove_sel).pack(side="left")
-        ttk.Button(bt, text="Clear", command=lambda: self.paths.delete(0, "end")).pack(side="left", padx=6)
-        self.paths = tk.Listbox(self.shots_box, height=8, relief="solid", bd=1, selectmode="extended",
-                                font=("Segoe UI", 9), highlightthickness=0, activestyle="none")
+        bt = ttk.Frame(self.shots_box, style="Card.TFrame"); bt.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        ttk.Button(bt, text="Add folder...", style="Small.TButton", command=self.add_folder).pack(side="left")
+        ttk.Button(bt, text="Add images...", style="Small.TButton", command=self.add_files).pack(side="left", padx=4)
+        ttk.Button(bt, text="Remove", style="Small.TButton", command=self.remove_sel).pack(side="left")
+        ttk.Button(bt, text="Clear", style="Small.TButton", command=lambda: self.paths.delete(0, "end")).pack(side="left", padx=4)
+        self.paths = tk.Listbox(self.shots_box, height=6, width=36, relief="flat", bd=0, selectmode="extended",
+                                font=(FONT, 9), highlightthickness=1, highlightbackground=BORDER,
+                                highlightcolor=ACCENT, activestyle="none", bg="#FBFBFE", fg=INK)
         self.paths.grid(row=1, column=0, sticky="nsew")
         for pth in st0.get("paths", []):
             if Path(pth).exists():
                 self.paths.insert("end", pth)
         self.switch_mode()
 
-        ttk.Label(left, text="Progress", style="H.TLabel").grid(row=3, column=0, sticky="w", pady=(14, 4))
-        self.bar = ttk.Progressbar(left, mode="determinate")
-        self.bar.grid(row=4, column=0, sticky="ew")
-        self.log = tk.Text(left, height=9, font=("Consolas", 9), relief="solid", bd=1, bg="#FBFBFD",
-                           fg=INK, state="disabled", padx=8, pady=6)
-        self.log.grid(row=5, column=0, sticky="nsew", pady=(6, 0))
-        left.rowconfigure(5, weight=1)
+        chosen = [s.strip() for s in cfg.get("scenes", mm.DEFAULT_SCENES).split(",")]
+        cP, wP = card(left, "Preview", "hover a style to see a sample")
+        cP.grid(row=1, column=0, sticky="ew", pady=(14, 0))
+        self.build_preview(wP, chosen)
+        left.rowconfigure(1, weight=0); left.rowconfigure(2, weight=1)
+        c2, w2o = card(left, "Progress")
+        c2.grid(row=2, column=0, sticky="nsew", pady=(14, 0))
+        w2 = ttk.Frame(w2o, style="Card.TFrame"); w2.pack(fill="both", expand=True)
+        w2.rowconfigure(1, weight=1); w2.columnconfigure(0, weight=1)
+        self.bar = ttk.Progressbar(w2, mode="determinate")
+        self.bar.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        self.log = tk.Text(w2, height=4, width=36, font=("Consolas", 9), relief="flat", bd=0, bg="#FBFBFE", fg=INK,
+                           highlightthickness=1, highlightbackground=BORDER, state="disabled", padx=10, pady=8)
+        self.log.grid(row=1, column=0, sticky="nsew")
 
-        # ---- right: options
-        right = ttk.Frame(root)
-        right.grid(row=0, column=1, sticky="nsew")
-        right.columnconfigure(0, weight=1)
-        r = 0
-        ttk.Label(right, text="2.  Mockup size", style="H.TLabel").grid(row=r, column=0, sticky="w"); r += 1
-        sz = ttk.Frame(right); sz.grid(row=r, column=0, sticky="ew", pady=(4, 0)); r += 1
+        # ---- right column
+        right = ttk.Frame(root); right.grid(row=1, column=1, sticky="nsew")
+        right.columnconfigure(0, weight=1, uniform="opt"); right.columnconfigure(1, weight=1, uniform="opt")
+
+        # styles gallery
+        self.scene_vars = {}
+        c3, w3 = card(right, "2  Mockup styles")
+        c3.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self.sel_lbl = ttk.Label(w3.head, text="", style="Muted.TLabel")
+        ttk.Button(w3.head, text="Edit panel text...", command=self.edit_text).pack(side="right")
+        ttk.Button(w3.head, text="None", command=lambda: [v.set(False) for v in self.scene_vars.values()]).pack(side="right", padx=6)
+        ttk.Button(w3.head, text="All", command=lambda: [v.set(True) for v in self.scene_vars.values()]).pack(side="right")
+        self.sel_lbl.pack(side="right", padx=10)
+        gal = tk.Frame(w3, bg=CARD); gal.pack(anchor="w")
+        self.build_gallery(gal, chosen)
+
+        # size & look
+        c4, w4 = card(right, "3  Size & look")
+        c4.grid(row=1, column=0, sticky="new", pady=(14, 0), padx=(0, 7))
+        sz = ttk.Frame(w4, style="Card.TFrame"); sz.pack(fill="x")
         cur = cfg.get("size", "auto").split(",")[0].strip().lower()
         m = re.match(r"^(\d+)x(\d+)$", cur)
         self.size_mode = tk.StringVar(value="custom" if m else "own")
         self.w_var = tk.StringVar(value=m.group(1) if m else "2000")
         self.h_var = tk.StringVar(value=m.group(2) if m else "2000")
-        ttk.Radiobutton(sz, text="Each style's own size (as in the samples)", value="own",
-                        variable=self.size_mode).grid(row=0, column=0, columnspan=6, sticky="w")
-        ttk.Radiobutton(sz, text="My custom size for ALL styles:", value="custom",
-                        variable=self.size_mode).grid(row=1, column=0, sticky="w", pady=(4, 0))
-        ent = ttk.Frame(sz); ent.grid(row=1, column=1, sticky="w", padx=(8, 0), pady=(4, 0))
+        ttk.Radiobutton(sz, text="Each style's own size", value="own", style="Card.TRadiobutton",
+                        variable=self.size_mode).grid(row=0, column=0, columnspan=4, sticky="w")
+        ttk.Radiobutton(sz, text="Custom size", value="custom", style="Card.TRadiobutton",
+                        variable=self.size_mode).grid(row=1, column=0, sticky="w", pady=(6, 0))
+        ent = ttk.Frame(sz, style="Card.TFrame"); ent.grid(row=1, column=1, sticky="w", padx=(8, 0), pady=(6, 0))
         we = ttk.Entry(ent, textvariable=self.w_var, width=6); we.pack(side="left")
-        ttk.Label(ent, text=" x ").pack(side="left")
+        ttk.Label(ent, text=" x ", style="Card.TLabel").pack(side="left")
         he = ttk.Entry(ent, textvariable=self.h_var, width=6); he.pack(side="left")
-        ttk.Label(ent, text=" px").pack(side="left")
+        ttk.Label(ent, text=" px", style="Card.TLabel").pack(side="left")
         for e in (we, he):
             e.bind("<Key>", lambda ev: self.size_mode.set("custom"))
-        ttk.Label(sz, text="or pick:").grid(row=1, column=2, padx=(12, 4), pady=(4, 0))
-        cb = ttk.Combobox(sz, values=PRESETS, state="readonly", width=11)
-        cb.grid(row=1, column=3, pady=(4, 0))
+        cb = ttk.Combobox(sz, values=PRESETS, state="readonly", width=10)
+        cb.set("or pick..."); cb.grid(row=1, column=2, padx=(10, 0), pady=(6, 0))
 
         def pick(_e=None):
             w, h = cb.get().split("x")
             self.w_var.set(w); self.h_var.set(h); self.size_mode.set("custom")
         cb.bind("<<ComboboxSelected>>", pick)
-        ttk.Label(right, text="With a custom size, every mockup (all styles you tick) comes out exactly this size.",
-                  style="Muted.TLabel").grid(row=r, column=0, sticky="w", pady=(4, 0)); r += 1
-        zf = ttk.Frame(right); zf.grid(row=r, column=0, sticky="ew", pady=(8, 0)); r += 1
-        ttk.Label(zf, text="Device size").pack(side="left")
+        zf = ttk.Frame(w4, style="Card.TFrame"); zf.pack(fill="x", pady=(12, 0))
+        ttk.Label(zf, text="Device size", style="Card.TLabel").pack(side="left")
         self.zoom = tk.IntVar(value=int(float(cfg.get("zoom", 100))))
         ttk.Scale(zf, from_=60, to=150, variable=self.zoom, command=lambda v: self.zoom_lbl.config(
-            text=f"{int(float(v))}%")).pack(side="left", fill="x", expand=True, padx=8)
-        self.zoom_lbl = ttk.Label(zf, text=f"{self.zoom.get()}%", width=5)
+            text=f"{int(float(v))}%")).pack(side="left", fill="x", expand=True, padx=10)
+        self.zoom_lbl = ttk.Label(zf, text=f"{self.zoom.get()}%", width=5, style="Card.TLabel")
         self.zoom_lbl.pack(side="left")
-
-        ttk.Label(right, text="3.  Styles to make", style="H.TLabel").grid(row=r, column=0, sticky="w", pady=(16, 2)); r += 1
-        chosen = [s.strip() for s in cfg.get("scenes", mm.DEFAULT_SCENES).split(",")]
-        self.scene_vars = {}
-        sbox = ttk.Frame(right); sbox.grid(row=r, column=0, sticky="ew"); r += 1
-        sleft = ttk.Frame(sbox); sleft.grid(row=0, column=0, sticky="nw")
-        grid = ttk.Frame(sleft); grid.pack(anchor="w")
-        half = (len(SCENES) + 1) // 2
-        for i, (key, label) in enumerate(SCENES):
-            v = tk.BooleanVar(value=key in chosen)
-            self.scene_vars[key] = v
-            cb = ttk.Checkbutton(grid, text=label, variable=v, command=lambda k=key: self.show_preview(k))
-            cb.grid(row=i % half, column=i // half, sticky="w", pady=1, padx=(0, 14))
-            cb.bind("<Enter>", lambda e, k=key: self.show_preview(k))
-        bf = ttk.Frame(sleft); bf.pack(anchor="w", pady=(4, 0))
-        ttk.Button(bf, text="Select all", command=lambda: [v.set(True) for v in self.scene_vars.values()]).pack(side="left")
-        ttk.Button(bf, text="Select none", command=lambda: [v.set(False) for v in self.scene_vars.values()]).pack(side="left", padx=6)
-        ttk.Button(bf, text="Edit panel text...", command=self.edit_text).pack(side="left")
-        self.build_preview(sbox, chosen)
-
-        ttk.Label(right, text="4.  Background & look", style="H.TLabel").grid(row=r, column=0, sticky="w", pady=(16, 2)); r += 1
-        bgf = ttk.Frame(right); bgf.grid(row=r, column=0, sticky="ew"); r += 1
+        bgf = ttk.Frame(w4, style="Card.TFrame"); bgf.pack(fill="x", pady=(12, 0))
+        ttk.Label(bgf, text="Background", style="Card.TLabel").pack(side="left")
         cur_bg = cfg.get("bg", "auto")
         self.bg_var = tk.StringVar(value=dict(BGS).get(cur_bg, "My own color..."))
         self.bg_custom = tk.StringVar(value=cur_bg if cur_bg.startswith("#") else "#EEF2FF")
-        ttk.Combobox(bgf, textvariable=self.bg_var, values=[b for _, b in BGS], state="readonly", width=26).pack(side="left")
-        ttk.Entry(bgf, textvariable=self.bg_custom, width=18).pack(side="left", padx=8)
-        lf = ttk.Frame(right); lf.grid(row=r, column=0, sticky="ew", pady=(6, 0)); r += 1
+        ttk.Combobox(bgf, textvariable=self.bg_var, values=[b for _, b in BGS], state="readonly", width=24).pack(side="left", padx=8)
+        ttk.Entry(bgf, textvariable=self.bg_custom, width=9).pack(side="left")
+        lf = ttk.Frame(w4, style="Card.TFrame"); lf.pack(fill="x", pady=(12, 0))
         self.finish = tk.StringVar(value=cfg.get("finish", "black"))
-        ttk.Label(lf, text="Devices:").pack(side="left")
-        ttk.Radiobutton(lf, text="Black", value="black", variable=self.finish).pack(side="left", padx=6)
-        ttk.Radiobutton(lf, text="Silver", value="silver", variable=self.finish).pack(side="left")
-        pf = ttk.Frame(right); pf.grid(row=r, column=0, sticky="ew", pady=(6, 0)); r += 1
-        ttk.Label(pf, text="Max pages per website").pack(side="left")
+        ttk.Label(lf, text="Devices", style="Card.TLabel").pack(side="left")
+        ttk.Radiobutton(lf, text="Black", value="black", variable=self.finish, style="Card.TRadiobutton").pack(side="left", padx=(12, 6))
+        ttk.Radiobutton(lf, text="Silver", value="silver", variable=self.finish, style="Card.TRadiobutton").pack(side="left")
+
+        # pages & output
+        c5, w5 = card(right, "4  Pages & save")
+        c5.grid(row=1, column=1, sticky="new", pady=(14, 0), padx=(7, 0))
+        sf = ttk.Frame(w5, style="Card.TFrame"); sf.pack(fill="x")
         self.src = tk.StringVar(value=cfg.get("page_source", "menu"))
-        sf = ttk.Frame(right); sf.grid(row=r, column=0, sticky="w", pady=(6, 0)); r += 1
-        ttk.Label(sf, text="Pages:").pack(side="left")
-        ttk.Radiobutton(sf, text="Only pages in the menu", value="menu", variable=self.src).pack(side="left", padx=6)
-        ttk.Radiobutton(sf, text="All pages of the website", value="all", variable=self.src).pack(side="left")
+        ttk.Radiobutton(sf, text="Only pages in the menu", value="menu", variable=self.src, style="Card.TRadiobutton").pack(side="left")
+        ttk.Radiobutton(sf, text="All pages", value="all", variable=self.src, style="Card.TRadiobutton").pack(side="left", padx=(12, 0))
+        pf = ttk.Frame(w5, style="Card.TFrame"); pf.pack(fill="x", pady=(8, 0))
+        ttk.Label(pf, text="Max pages per website", style="Card.TLabel").pack(side="left")
         self.max_pages = tk.IntVar(value=int(cfg.get("max_pages", 60)))
         ttk.Spinbox(pf, from_=1, to=300, textvariable=self.max_pages, width=5).pack(side="left", padx=8)
         self.reuse = tk.BooleanVar(value=False)
-        ttk.Checkbutton(right, text="Reuse screenshots already taken (fast, for new styles/sizes)",
-                        variable=self.reuse).grid(row=r, column=0, sticky="w", pady=(6, 0)); r += 1
+        ttk.Checkbutton(w5, text="Reuse screenshots already taken (fast)", variable=self.reuse,
+                        style="Card.TCheckbutton").pack(anchor="w", pady=(8, 0))
         self.shots_only = tk.BooleanVar(value=False)
         self.shots_mobile = tk.BooleanVar(value=False)
-        so = ttk.Frame(right); so.grid(row=r, column=0, sticky="w", pady=(6, 0)); r += 1
-        ttk.Checkbutton(so, text="Only take website screenshots (all pages, no mockups)",
-                        variable=self.shots_only).pack(side="left")
         self.shots_tablet = tk.BooleanVar(value=False)
-        ttk.Checkbutton(so, text="+ tablet", variable=self.shots_tablet).pack(side="left", padx=(10, 0))
-        ttk.Checkbutton(so, text="+ phone", variable=self.shots_mobile).pack(side="left", padx=10)
-        ttk.Label(right, text="Presentation title text (style 11):").grid(row=r, column=0, sticky="w", pady=(8, 0)); r += 1
-        tf = ttk.Frame(right); tf.grid(row=r, column=0, sticky="ew"); r += 1
+        so = ttk.Frame(w5, style="Card.TFrame"); so.pack(fill="x", pady=(4, 0))
+        ttk.Checkbutton(so, text="Only screenshots (no mockups)", variable=self.shots_only,
+                        style="Card.TCheckbutton").pack(side="left")
+        so2 = ttk.Frame(w5, style="Card.TFrame"); so2.pack(fill="x", padx=(24, 0))
+        ttk.Checkbutton(so2, text="+ tablet", variable=self.shots_tablet, style="Card.TCheckbutton").pack(side="left")
+        ttk.Checkbutton(so2, text="+ phone", variable=self.shots_mobile, style="Card.TCheckbutton").pack(side="left", padx=10)
+        tf = ttk.Frame(w5, style="Card.TFrame"); tf.pack(fill="x", pady=(8, 0))
+        ttk.Label(tf, text="Style 11 title", style="Card.TLabel").pack(side="left")
         self.t_small = tk.StringVar(value=cfg.get("title_small", "Fully editable"))
         self.t_big = tk.StringVar(value=cfg.get("title_big", "Website template"))
-        ttk.Entry(tf, textvariable=self.t_small, width=18).pack(side="left")
-        ttk.Entry(tf, textvariable=self.t_big, width=22).pack(side="left", padx=6)
+        ttk.Entry(tf, textvariable=self.t_small, width=13).pack(side="left", padx=(8, 4))
+        ttk.Entry(tf, textvariable=self.t_big, width=15).pack(side="left")
 
-        # ---- bottom buttons
-        bot = ttk.Frame(root)
-        bot.grid(row=1, column=1, sticky="sew")
-        of = ttk.Frame(bot); of.pack(fill="x", pady=(8, 0))
-        ttk.Label(of, text="5.  Save to", style="H.TLabel").pack(side="left", padx=(0, 8))
+        # ---- bottom bar
+        bot = ttk.Frame(right); bot.grid(row=2, column=0, columnspan=2, sticky="sew", pady=(14, 0))
+        right.rowconfigure(2, weight=1)
+        bot.columnconfigure(0, weight=1)
+        cs, ws = card(bot, pad=10)
+        cs.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 12))
+        of = ttk.Frame(ws, style="Card.TFrame"); of.pack(fill="x")
+        ttk.Label(of, text="5  Save to", style="H.TLabel").pack(side="left", padx=(4, 10))
         self.out_var = tk.StringVar(value=cfg.get("out") or str(mm.desktop_dir() / "Mockups"))
+        ttk.Button(of, text="Desktop", command=lambda: self.out_var.set(str(mm.desktop_dir() / "Mockups"))).pack(side="right")
+        ttk.Button(of, text="Browse...", command=self.pick_out).pack(side="right", padx=(0, 6))
         ttk.Entry(of, textvariable=self.out_var).pack(side="left", fill="x", expand=True)
-        ttk.Button(of, text="Browse...", command=self.pick_out).pack(side="left", padx=(6, 0))
-        ttk.Button(of, text="Desktop", command=lambda: self.out_var.set(str(mm.desktop_dir() / "Mockups"))).pack(side="left", padx=(6, 0))
         self.go = ttk.Button(bot, text="Make Mockups", style="Go.TButton", command=self.start)
-        self.go.pack(fill="x", pady=(10, 6))
-        row = ttk.Frame(bot); row.pack(fill="x")
-        self.stop_btn = ttk.Button(row, text="Stop", command=self.stop, state="disabled")
-        self.stop_btn.pack(side="left")
-        ttk.Button(row, text="Open finished mockups", command=self.open_out).pack(side="right")
-        self.status = ttk.Label(bot, text="Ready.", style="Muted.TLabel")
-        self.status.pack(anchor="w", pady=(6, 0))
+        self.go.grid(row=1, column=0, sticky="ew")
+        self.stop_btn = ttk.Button(bot, text="Stop", command=self.stop, state="disabled")
+        self.stop_btn.grid(row=1, column=1, padx=(10, 0), sticky="ns")
+        ttk.Button(bot, text="Open finished mockups", command=self.open_out).grid(row=1, column=2, padx=(10, 0), sticky="ns")
+        self.status = ttk.Label(bot, text="Ready.", style="Status.TLabel")
+        self.status.grid(row=2, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
         self.after(150, self.poll)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -370,19 +427,74 @@ class App(tk.Tk):
             self.out_var.set(str(Path(d)))
 
     # ---- style preview panel -------------------------------------------------
+    def build_gallery(self, parent, chosen):
+        """Thumbnails you click to tick or untick a style."""
+        self.tiles, self.thumbs, cols = {}, {}, 10
+        for i, (key, label) in enumerate(SCENES):
+            v = tk.BooleanVar(value=key in chosen)
+            self.scene_vars[key] = v
+            tile = tk.Frame(parent, bg=CARD, highlightthickness=2, highlightbackground=BORDER, cursor="hand2")
+            tile.grid(row=i // cols, column=i % cols, padx=3, pady=3)
+            img = self.thumb(key)
+            if img is not None:
+                pic = tk.Label(tile, image=img, bg=THUMB_BG, bd=0)
+            else:
+                pic = tk.Label(tile, text=styles.STYLES[key][0], bg=THUMB_BG, fg=MUTED, width=9, height=4)
+            pic.pack(padx=3, pady=(3, 0))
+            cap = tk.Label(tile, text=styles.STYLES[key][0].replace("Style ", "Style "), bg=CARD, fg=INK,
+                           font=("Segoe UI", 8))
+            cap.pack(pady=(1, 3))
+            badge = tk.Label(tile, text="\u2713", bg=ACCENT, fg="white", font=("Segoe UI", 8, "bold"), width=2)
+            self.tiles[key] = (tile, badge)
+            for w in (tile, pic, cap, badge):
+                w.bind("<Button-1>", lambda e, k=key: self.toggle_style(k))
+                w.bind("<Enter>", lambda e, k=key: self.show_preview(k))
+            v.trace_add("write", lambda *a, k=key: self.refresh_tile(k))
+            self.refresh_tile(key)
+
+    def thumb(self, key):
+        if Image is None:
+            return None
+        try:
+            im = Image.open(self.preview_file(key)).convert("RGB")
+            im.thumbnail((THUMB, THUMB), Image.LANCZOS)
+            sq = Image.new("RGB", (THUMB, THUMB), THUMB_BG)
+            sq.paste(im, ((THUMB - im.width) // 2, (THUMB - im.height) // 2))
+            ph = ImageTk.PhotoImage(sq)
+            self.thumbs[key] = ph
+            return ph
+        except Exception:
+            return None
+
+    def toggle_style(self, key):
+        self.scene_vars[key].set(not self.scene_vars[key].get())
+        self.show_preview(key)
+
+    def refresh_tile(self, key):
+        tile, badge = self.tiles[key]
+        on = self.scene_vars[key].get()
+        tile.configure(highlightbackground=ACCENT if on else BORDER)
+        if on:
+            badge.place(relx=1.0, x=-4, y=4, anchor="ne")
+        else:
+            badge.place_forget()
+        n = sum(1 for v in self.scene_vars.values() if v.get())
+        if hasattr(self, "sel_lbl"):
+            self.sel_lbl.configure(text=f"{n} of {len(self.scene_vars)} selected")
+
     def build_preview(self, parent, chosen):
         self.pv_cache, self.pv_key = {}, None
+        box = ttk.Frame(parent, style="Card.TFrame"); box.pack(fill="x")
         if Image is None or not PREVIEWS.is_dir():
             return
-        box = ttk.Frame(parent); box.grid(row=0, column=1, sticky="ne", padx=(8, 0))
-        parent.columnconfigure(1, weight=1)
-        ttk.Label(box, text="Preview", style="Muted.TLabel").pack(anchor="w")
-        self.pv_canvas = tk.Canvas(box, width=PV, height=PV, bg="#E3E6EF", highlightthickness=1,
-                                   highlightbackground="#C9CEDB", cursor="hand2")
-        self.pv_canvas.pack()
+        self.pv_canvas = tk.Canvas(box, width=PV, height=PV, bg=THUMB_BG, highlightthickness=1,
+                                   highlightbackground=BORDER, cursor="hand2")
+        self.pv_canvas.pack(pady=(0, 0))
         self.pv_canvas.bind("<Button-1>", lambda e: self.big_preview())
-        self.pv_caption = ttk.Label(box, text="", style="Muted.TLabel")
-        self.pv_caption.pack(anchor="w", pady=(3, 0))
+        self.pv_caption = ttk.Label(box, text="", style="Card.TLabel", font=("Segoe UI", 10, "bold"))
+        self.pv_caption.pack(anchor="w", pady=(8, 0))
+        self.pv_sub = ttk.Label(box, text="", style="Muted.TLabel")
+        self.pv_sub.pack(anchor="w")
         first = next((k for k, _ in SCENES if k in chosen), SCENES[0][0])
         self.show_preview(first)
 
@@ -401,7 +513,8 @@ class App(tk.Tk):
             self.pv_canvas.create_image(PV // 2, PV // 2, image=self.pv_cache[key])
             self.pv_key = key
             name, size, _ = styles.STYLES[key]
-            self.pv_caption.configure(text=f"{name}  -  click to enlarge")
+            self.pv_caption.configure(text=name)
+            self.pv_sub.configure(text=f"Sample size {size[0]} x {size[1]} px")
         except Exception:
             pass
 
@@ -468,7 +581,7 @@ class App(tk.Tk):
             messagebox.showinfo("Site Mockup Maker by Raddito", "Screenshots only works with website links (box 1). Switch to 'Website links'.")
             return
         if not scenes and not self.shots_only.get():
-            messagebox.showinfo("Site Mockup Maker by Raddito", "Tick at least one style in box 3.")
+            messagebox.showinfo("Site Mockup Maker by Raddito", "Tick at least one style in box 2.")
             return
         try:
             size = self.chosen_size()

@@ -27,6 +27,10 @@ size_tilted_three_pages =
 size_laptop_phone_features =
 size_hero_card =
 size_hero_layered =
+size_browser_phone =
+size_three_phones =
+size_page_cascade =
+size_device_trio =
 
 # How big the devices/pages are inside the image, in percent.
 # 100 = normal, 120 = bigger (may crop at the edges), 85 = smaller.
@@ -50,7 +54,7 @@ device_size = 100
 #   laptop_phone_features   Style 14  2000x1693
 #   hero_card               Style 15  1600x1200
 #   hero_layered            Style 16  1600x1200
-scenes = two_pages_grid, browser_hero, banner_page, banner_pages_phone, banner_three_pages, features_tilted, what_you_can_do, benefits, whats_included, perspective_dark, presentation, page_phone, tilted_three_pages, laptop_phone_features, hero_card, hero_layered
+scenes = two_pages_grid, browser_hero, banner_page, banner_pages_phone, banner_three_pages, features_tilted, what_you_can_do, benefits, whats_included, perspective_dark, presentation, page_phone, tilted_three_pages, laptop_phone_features, hero_card, hero_layered, browser_phone, three_phones, page_cascade, device_trio
 
 # ---------- TEXT ON THE PRESENTATION IMAGE ----------
 # {site} = website name, {pages} = page names (HOME | ABOUT | ...)
