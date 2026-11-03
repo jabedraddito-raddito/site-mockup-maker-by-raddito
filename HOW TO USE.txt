@@ -1,8 +1,0 @@
-HOW TO USE
-
-Double-click "Site Mockup Maker" on your Desktop. A window opens:
-  1. Paste your website links in the big box, one per line.
-  2. Pick the mockup size.
-  3. Tick the styles you want.
-  4. Press "Make Mockups" and wait for "Done".
-Then click "Open finished mockups". Each website has its own folder in Desktop\Mockups.
