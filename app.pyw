@@ -23,7 +23,7 @@ SETTINGS = HERE / "settings.txt"
 URLS = HERE / "urls.txt"
 STATE = HERE / "_data" / "app_state.json"
 PREVIEWS = HERE / "previews"
-THUMB = 66      # gallery thumbnail size
+THUMB = 58      # gallery thumbnail size
 THUMB_BG = "#EDEFF5"
 PV = 250        # preview box size in pixels
 
@@ -453,7 +453,7 @@ class App(tk.Tk):
     # ---- style preview panel -------------------------------------------------
     def build_gallery(self, parent, chosen):
         """Thumbnails you click to tick or untick a style."""
-        self.tiles, self.thumbs, cols = {}, {}, 10
+        self.tiles, self.thumbs, cols = {}, {}, 11
         for i, (key, label) in enumerate(SCENES):
             v = tk.BooleanVar(value=key in chosen)
             self.scene_vars[key] = v

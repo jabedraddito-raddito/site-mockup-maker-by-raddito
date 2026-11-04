@@ -104,10 +104,14 @@ STYLES = {
     "three_phones":        ("Style 18",                 (2000, 2000), True),
     "page_cascade":        ("Style 19",                 (2000, 2000), False),
     "device_trio":         ("Style 20",                 (2000, 2000), True),
+    "elementsdoc":         ("Elementsdoc",              (2000, 1283), False),
 }
 
 
 def file_name(key):
+    name = STYLES[key][0]
+    if not name.startswith("Style "):          # a style with its own name keeps that name
+        return name
     n = list(STYLES).index(key) + 1
     return f"Style_{n:02d}"
 
@@ -533,6 +537,29 @@ def device_trio(x):
     _headline(x, x.site, 1860, 56, None, "m")
 
 
+def elementsdoc(x):
+    """Three tall full-page screenshots side by side on a dark, brand-tinted grid; the pages run off the bottom."""
+    c = x.c
+    x.dark_bg()
+    mid = mm.mix(x.brand, (6, 5, 5), 0.78)
+    x.soft_grid(64, 0.07, base=mid)
+    side_w, mid_w, gap, left = 540, 760, 30, 50
+    xl, xc, xr = left, left + side_w + gap, left + side_w + gap + mid_w + gap
+    # centre = Home; left = another page; right = Home again, scrolled on to the next sections
+    other = x.page_img(0)
+    c_top = 0
+    visible_src = x.Y(1283 - 75) * x.home.width / max(1, x.X(mid_w))
+    edges = [e for e in mm.section_edges(x.home) if e >= visible_src * 0.45]
+    r_top = edges[0] if edges else min(visible_src * 0.6, max(0, x.home.height - visible_src))
+    r_top = max(0, min(r_top, x.home.height - visible_src * 1.0)) if x.home.height > visible_src else 0
+    x.page(other, x.X(xl), x.Y(121), x.X(side_w), top=x.start(other, 1), r=16, shadow=60)
+    x.page(x.home, x.X(xr), x.Y(121), x.X(side_w), top=r_top, r=16, shadow=60)
+    x.page(x.home, x.X(xc), x.Y(75), x.X(mid_w), top=c_top, r=18, shadow=90)
+    line = mm.mix(mid, (255, 255, 255), 0.28)
+    c.d.rounded_rectangle([x.X(xc), x.Y(75), x.X(xc + mid_w), c.H + 60], radius=round(x.S(18)), outline=line,
+                          width=max(2, round(x.S(2))))
+
+
 DRAW = {
     "two_pages_grid": two_pages_grid, "browser_hero": browser_hero, "banner_page": banner_page,
     "banner_pages_phone": banner_pages_phone, "banner_three_pages": banner_three_pages,
@@ -541,7 +568,7 @@ DRAW = {
     "tilted_three_pages": tilted_three_pages, "laptop_phone_features": laptop_phone_features,
     "hero_layered": hero_layered, "hero_card": hero_card,
     "browser_phone": browser_phone, "three_phones": three_phones, "page_cascade": page_cascade,
-    "device_trio": device_trio,
+    "device_trio": device_trio, "elementsdoc": elementsdoc,
     # "presentation" is drawn by mockup_maker.compose_site
 }
 
