@@ -31,13 +31,14 @@ size_browser_phone =
 size_three_phones =
 size_page_cascade =
 size_device_trio =
+size_elementsdoc =
 
 # How big the devices/pages are inside the image, in percent.
 # 100 = normal, 120 = bigger (may crop at the edges), 85 = smaller.
 device_size = 100
 
 # ---------- WHAT TO MAKE ----------
-# The 16 styles (each one image per website, using several pages of the site):
+# The styles (each one image per website, using several pages of the site):
 #   two_pages_grid          Style 1  2000x2000
 #   browser_hero            Style 2  2000x2000
 #   banner_page             Style 3  2000x2000
@@ -54,7 +55,12 @@ device_size = 100
 #   laptop_phone_features   Style 14  2000x1693
 #   hero_card               Style 15  1600x1200
 #   hero_layered            Style 16  1600x1200
-scenes = two_pages_grid, browser_hero, banner_page, banner_pages_phone, banner_three_pages, features_tilted, what_you_can_do, benefits, whats_included, perspective_dark, presentation, page_phone, tilted_three_pages, laptop_phone_features, hero_card, hero_layered, browser_phone, three_phones, page_cascade, device_trio
+#   browser_phone           Style 17  2000x2000
+#   three_phones            Style 18  2000x2000
+#   page_cascade            Style 19  2000x2000
+#   device_trio             Style 20  2000x2000
+#   elementsdoc             Elementsdoc  2000x1283
+scenes = two_pages_grid, browser_hero, banner_page, banner_pages_phone, banner_three_pages, features_tilted, what_you_can_do, benefits, whats_included, perspective_dark, presentation, page_phone, tilted_three_pages, laptop_phone_features, hero_card, hero_layered, browser_phone, three_phones, page_cascade, device_trio, elementsdoc
 
 # ---------- TEXT ON THE PRESENTATION IMAGE ----------
 # {site} = website name, {pages} = page names (HOME | ABOUT | ...)
